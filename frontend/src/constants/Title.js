@@ -1,0 +1,1 @@
+export const Title = 'Voice Chat'

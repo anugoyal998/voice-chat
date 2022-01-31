@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*{
+    color: white;
+}
+
+@layer components {
+    .animation{
+        @apply transform transition-all duration-300 ease-in-out
+    }
+}
