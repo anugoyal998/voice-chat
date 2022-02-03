@@ -29,19 +29,20 @@ const App = () => {
             element={
               !isAuth ? (
                 <Navigate to="/" />
-              ) : isAuth && !user.activated ? (
+              ) : isAuth && !user?.activated ? (
                 <Activate />
               ) : (
                 <Navigate to="/rooms" />
               )
             }
+            // element={<Activate/>}
           />
           <Route
             path="/rooms"
             element={
               !isAuth ? (
                 <Navigate to="/" />
-              ) : isAuth && !user.activated ? (
+              ) : isAuth && !user?.activated ? (
                 <Navigate to="/activate" />
               ) : (
                 <Rooms />

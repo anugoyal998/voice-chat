@@ -45,9 +45,11 @@ class AuthController {
         user = await userService.createUser({phone: phone})
       }
       const  {accessToken, refreshToken} = tokenService.generateTokens({_id: user._id, activated: false})
+      await tokenService.storeRefreshToken(refreshToken,user._id)
       res.cookie('refreshToken',refreshToken,{maxAge: 1000*60*60*24*7, httpOnly: true})
+      res.cookie('accessToken',accessToken,{maxAge: 1000*60*60, httpOnly: true})
       const userDto = new UserDto(user)
-      res.status(200).json({accessToken,user: userDto})
+      res.status(200).json({user: userDto, auth: true})
     } catch (error) {
       console.log(error);
       return res.status(400).json({ msg: "error" });
