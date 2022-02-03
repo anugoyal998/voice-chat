@@ -55,6 +55,43 @@ class AuthController {
       return res.status(400).json({ msg: "error" });
     }
   }
+  async refresh(req, res) {
+    try {
+      const {refreshToken: refreshTokenFromCookie} = req.cookies
+      const userData = await tokenService.verifyRefreshToken(refreshTokenFromCookie)
+      const token = await tokenService.findRefreshToken(userData._id,refreshTokenFromCookie)
+      if(!token) {
+        return res.status(400).json({ msg: "error" });  
+      }
+      const user = await userService.findUser({_id: userData._id})
+      if(!user){
+        return res.status(400).json({ msg: "error" })
+      }
+      const {refreshToken,accessToken} = tokenService.generateTokens({_id: userData._id})
+      await tokenService.updateRefreshToken(userData._id,refreshToken)
+      res.cookie('refreshToken',refreshToken,{maxAge: 1000*60*60*24*7, httpOnly: true})
+      res.cookie('accessToken',accessToken,{maxAge: 1000*60*60, httpOnly: true})
+      const userDto = new UserDto(user)
+      res.status(200).json({user: userDto, auth: true})
+    } catch (error) {
+      console.log(error);
+      return res.status(400).json({ msg: "error" });
+    }
+  }
+  async logout(req, res) {
+    try {
+      const {refreshToken} = req.cookies
+      // delte refresh token from db
+      await tokenService.removeToken(refreshToken)
+      // delete cookies
+      res.clearCookie('refreshToken');
+      res.clearCookie('accessToken');
+      res.status(200).json({user: null,auth: false})
+    } catch (error) {
+      console.log(error);
+      return res.status(400).json({ msg: "error" });
+    }
+  }
 }
 
 module.exports = new AuthController();

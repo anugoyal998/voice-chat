@@ -3,25 +3,32 @@ import Button from "../../../components/shared/Button";
 import Card from "../../../components/shared/Card";
 import TextInput from "../../../components/shared/TextInput";
 import { sendOtp } from "../../../http";
-import {useDispatch} from 'react-redux'
+import { useDispatch } from "react-redux";
 import { setOtp } from "../../../store/authSlice";
+import toast, {Toaster} from 'react-hot-toast'
+import {ToastConfig} from '../../../toast/toast-config'
 
-const Phone = ({onNext}) => {
+const Phone = ({ onNext }) => {
   const [phoneNumber, setPhoneNumber] = useState();
-  const dispatch = useDispatch()
-  const submit = async ()=> {
-    try {
-      const {data} = await sendOtp({phone: phoneNumber})
-      console.log(data)
-      dispatch(setOtp({phone: data.phone, hash: data.hash}))
-      onNext()
-    } catch (error) {
-      console.log(error)
+  const dispatch = useDispatch();
+  const submit = async () => {
+    if (!phoneNumber) {
+      toast("Invalid phone number", ToastConfig.errorDarkMode);
       return
     }
-  }
+    try {
+      const { data } = await sendOtp({ phone: phoneNumber });
+      console.log(data);
+      dispatch(setOtp({ phone: data.phone, hash: data.hash }));
+      onNext();
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+  };
   return (
     <Card>
+      <Toaster/>
       <p className="text-lg font-medium text-textPrimary mb-4">
         ☎ Enter your Phone Number
       </p>

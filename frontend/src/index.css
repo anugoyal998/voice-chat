@@ -11,3 +11,14 @@
         @apply transform transition-all duration-300 ease-in-out
     }
 }
+
+.spinner{
+    margin-bottom: 20px;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframe spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
