@@ -19,6 +19,8 @@ export const sendOtp = (data) => api.post(`${url}/api/send-otp`, data);
 export const verifyOtp = (data) => api.post(`${url}/api/verify-otp`, data);
 export const activate = (data) => api.post(`${url}/api/activate`, data);
 export const logout = () => api.post(`${url}/api/logout`)
+export const createRoom = (data)=> api.post(`${url}/api/rooms`,data)
+export const getAllRooms = () => api.get(`${url}/api/rooms`)
 
 api.interceptors.response.use(
   (config) => {

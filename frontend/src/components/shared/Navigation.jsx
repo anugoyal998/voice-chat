@@ -18,15 +18,15 @@ const Navigation = () => {
   };
   return (
     <div className="flex items-center justify-between">
-      <div className="text-lg font-semibold">
-        👋🏼 Voice Chat
-      </div>
+      <div className="text-lg font-semibold">👋🏼 Voice Chat</div>
       {isAuth && (
         <div className="flex items-center">
           <div className="flex items-center space-x-2">
-            <h3 className="capitalize font-semibold w-20 truncate">{user?.name}</h3>
+            <h3 className="capitalize font-semibold w-20 truncate">
+              {user?.name}
+            </h3>
             <img
-              src={user?.avatar}
+              src={user?.avatar ? user?.avatar : "https://picsum.photos/100"}
               alt="avatar"
               className="w-14 h-14 border-4 border-bgBlue rounded-full object-cover"
             />

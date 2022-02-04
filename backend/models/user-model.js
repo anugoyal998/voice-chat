@@ -6,10 +6,11 @@ const Schema = mongoose.Schema;
 const userSchema = Schema({
     phone: {type: String, required: true},
     name: {type: String, required: false},
-    avatar: {type: String, required: false},
+    avatar: {type: String, required: false, get: (avatar)=> {return avatar && `${process.env.BASE_URL}${avatar}`}},
     activated: {type: Boolean, required: false, default: false},
 },{
-    timestamps: true
+    timestamps: true,
+    toJSON: {getters: true}
 })
 
 module.exports = mongoose.model('User',userSchema)
