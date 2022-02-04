@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { setAvatar } from "../../store/activateSlice";
 import { setAuth } from "../../store/authSlice";
@@ -14,6 +14,7 @@ const StepAvatar = () => {
   const { name, avatar } = useSelector((state) => state.activate);
   const [image, setImage] = useState("https://picsum.photos/100");
   const [loading, setLoading] = useState(false);
+  const [unMounted,setUnMounted] = useState(false);
   const captureImage = (e) => {
     const reader = new FileReader();
     reader.readAsDataURL(e.target.files[0]);
@@ -32,7 +33,9 @@ const StepAvatar = () => {
       if (!name || !avatar) return;
       const { data } = await activate({ name, avatar });
       if (data.auth) {
-        dispatch(setAuth(data));
+        if(!unMounted){
+          dispatch(setAuth(data));
+        }
       }
     } catch (error) {
       console.log(error);
@@ -41,6 +44,11 @@ const StepAvatar = () => {
       setLoading(false);
     }
   };
+  useEffect(()=> {
+    return ()=> {
+      setUnMounted(true)
+    }
+  },[])
   if (!loading) {
     return (
       <div className="flex justify-center items-center mt-[6rem]">

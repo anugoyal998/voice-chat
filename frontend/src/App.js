@@ -19,7 +19,7 @@ const App = () => {
   const {loading} = useLoadingWithRefresh()
   if (!loading) {
     return (
-      <div className="h-screen bg-bgPrimary">
+      <div className="h-screen bg-bgPrimary py-4 px-16">
         <Navigation />
         <Router>
           <Routes>

@@ -6,8 +6,8 @@ const refreshModel = require('../models/refresh-model')
 
 class TokenService{
     generateTokens(payload){
-        const accessToken = jwt.sign(payload,accessTokenSecret,{expiresIn: '1m'})
-        const refreshToken = jwt.sign(payload,refreshTokenSecret,{expiresIn: '1y'})
+        const accessToken = jwt.sign(payload,accessTokenSecret,{expiresIn: '1d'})
+        const refreshToken = jwt.sign(payload,refreshTokenSecret,{expiresIn: '7d'})
         return {accessToken, refreshToken}
     }
     async storeRefreshToken(token,userId){

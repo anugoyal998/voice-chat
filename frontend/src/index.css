@@ -22,3 +22,17 @@
         transform: rotate(360deg);
     }
 }
+
+.heading{
+    position: relative;
+}
+
+.heading::after{
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 60%;
+    height: 4px;
+    background: #0077ff;
+}

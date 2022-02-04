@@ -1,25 +1,44 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { logout } from "../../http";
-import {useDispatch, useSelector} from 'react-redux'
-import {setAuth} from '../../store/authSlice'
+import { useDispatch, useSelector } from "react-redux";
+import { setAuth } from "../../store/authSlice";
+import { AiOutlineArrowRight } from "react-icons/ai";
 
 const Navigation = () => {
-  const dispatch =  useDispatch()
-  const {isAuth}  = useSelector(state => state.auth)
-  const logoutUser = async ()=> {
+  const dispatch = useDispatch();
+  const { isAuth, user } = useSelector((state) => state.auth);
+  const logoutUser = async () => {
     try {
-      const {data} = await logout()
-      dispatch(setAuth(data))
+      const { data } = await logout();
+      dispatch(setAuth(data));
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
   return (
-    <div className="py-2 flex items-center">
-      <div className="w-[90vw] mx-auto text-lg font-semibold">
+    <div className="flex items-center justify-between">
+      <div className="text-lg font-semibold">
         👋🏼 Voice Chat
       </div>
-      {isAuth && <button className="bg-white text-black"onClick={logoutUser}>logout</button>}
+      {isAuth && (
+        <div className="flex items-center">
+          <div className="flex items-center space-x-2">
+            <h3 className="capitalize font-semibold w-20 truncate">{user?.name}</h3>
+            <img
+              src={user?.avatar}
+              alt="avatar"
+              className="w-14 h-14 border-4 border-bgBlue rounded-full object-cover"
+            />
+          </div>
+          <button
+            className="border-none outline-none focus:outline-none cursor-pointer mx-2 bg-bgBlue w-8 h-8 rounded-full flex justify-center items-center"
+            onClick={logoutUser}
+          >
+            <AiOutlineArrowRight className="text-2xl" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
