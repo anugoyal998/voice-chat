@@ -8,7 +8,6 @@ import {
 import Navigation from "./components/shared/Navigation";
 import Authenticate from "./pages/authenticate/Authenticate";
 import Home from "./pages/Home/Home";
-import Activate from "./pages/activate/Activate";
 import Rooms from "./pages/Rooms/Rooms";
 import { useSelector } from "react-redux";
 import { useLoadingWithRefresh } from "./hooks/useLoadingWithRefresh";
@@ -30,24 +29,10 @@ const App = () => {
               element={isAuth ? <Navigate to="/rooms" /> : <Authenticate />}
             />
             <Route
-              path="/activate"
-              element={
-                !isAuth ? (
-                  <Navigate to="/" />
-                ) : isAuth && !user?.activated ? (
-                  <Activate />
-                ) : (
-                  <Navigate to="/rooms" />
-                )
-              }
-            />
-            <Route
               path="/rooms"
               element={
                 !isAuth ? (
                   <Navigate to="/" />
-                ) : isAuth && !user?.activated ? (
-                  <Navigate to="/activate" />
                 ) : (
                   <Rooms />
                 )
@@ -58,9 +43,7 @@ const App = () => {
               element={
                 !isAuth ? (
                   <Navigate to="/" />
-                ) : isAuth && !user?.activated ? (
-                  <Navigate to="/activate" />
-                ) : (
+                )  : (
                   <Room />
                 )
               }
