@@ -1,31 +1,31 @@
 import React, { useState } from "react";
 import TextInput from "../shared/TextInput";
 import { IoMdClose } from "react-icons/io";
-import {createRoom as create} from '../../http'
-import {ToastConfig} from '../../toast/toast-config'
-import {useNavigate} from 'react-router-dom'
-import toast, {Toaster} from 'react-hot-toast'
+import { createRoom as create } from "../../http";
+import { ToastConfig } from "../../toast/toast-config";
+import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
 
 const AddRoomModal = ({ onClose }) => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [roomType, setRoomType] = useState("open");
   const [topic, setTopic] = useState("");
-  const createRoom = async ()=> {
-      if(!topic){
-          toast('Please enter a topic',ToastConfig.errorDarkMode)
-          return
-      }
-      try {
-          const {data} = await create({roomName: topic, roomID: Date.now().toString()});
-          console.log(data)
-          // navigate(`/room/${data.id}`)
-      } catch (error) {
-          console.log(error)
-      }
-  }
+  const createRoom = async () => {
+    if (!topic) {
+      toast("Please enter a topic", ToastConfig.errorDarkMode);
+      return;
+    }
+    try {
+      const { data } = await create({ roomName: topic, roomType });
+      console.log(data);
+      navigate(`/room?roomID=${data?.roomID}`);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <div className="modalMask fixed top-0 left-0 bottom-0 right-0 bg-[rgba(0,0,0,0.6)] flex items-center justify-center ">
-        <Toaster/>
+      <Toaster />
       <div className="modalBody w-[50%] max-w-[500px] bg-bgSecondary rounded-[20px] relative">
         <div
           className="absolute right-[10px] top-[8px] cursor-pointer"

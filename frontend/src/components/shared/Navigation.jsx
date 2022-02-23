@@ -19,7 +19,7 @@ const Navigation = () => {
     }
   };
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between px-16 h-[50px]">
       <div className="text-lg font-semibold">👋🏼 Voice Chat</div>
       {isAuth && (
         <div className="flex items-center">

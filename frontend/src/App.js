@@ -19,7 +19,7 @@ const App = () => {
   const {loading} = useLoadingWithRefresh()
   if (!loading) {
     return (
-      <div className="h-screen bg-bgPrimary py-4 px-16">
+      <div className="h-screen bg-bgPrimary py-4">
         <Navigation />
         <Router>
           <Routes>
@@ -39,7 +39,7 @@ const App = () => {
               }
             />
             <Route
-              path="/room/:id"
+              path="/room"
               element={
                 !isAuth ? (
                   <Navigate to="/" />

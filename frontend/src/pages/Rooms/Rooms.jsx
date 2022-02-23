@@ -5,70 +5,27 @@ import { FiUserPlus } from "react-icons/fi";
 import AddRoomModal from "../../components/AddRoomModal/AddRoomModal";
 import RoomCard from "../../components/shared/RoomCard";
 import { getAllRooms } from "../../http";
-
-// const rooms = [
-//   {
-//     id: 1,
-//     topic: "Which framework best for backend?",
-//     speakers: [
-//       {
-//         id: 1,
-//         name: "John Doe",
-//         avatar: "http://localhost:5000/storage/1643871454771-207709675.png",
-//       },
-//       {
-//         id: 2,
-//         name: "John Doe",
-//         avatar: "http://localhost:5000/storage/1643872444261-600086395.png",
-//       },
-//     ],
-//     totalPeople: 40,
-//   },
-//   {
-//     id: 2,
-//     topic: "Which framework best for backend?",
-//     speakers: [
-//       {
-//         id: 1,
-//         name: "John Doe",
-//         avatar: "http://localhost:5000/storage/1643871454771-207709675.png",
-//       },
-//       {
-//         id: 2,
-//         name: "John Doe",
-//         avatar: "http://localhost:5000/storage/1643872444261-600086395.png",
-//       },
-//     ],
-//     totalPeople: 40,
-//   },
-//   {
-//     id: 3,
-//     topic: "Which framework best for backend?",
-//     speakers: [
-//       {
-//         id: 1,
-//         name: "John Doe",
-//         avatar: "http://localhost:5000/storage/1643871454771-207709675.png",
-//       },
-//       {
-//         id: 2,
-//         name: "John Doe",
-//         avatar: "http://localhost:5000/storage/1643872444261-600086395.png",
-//       },
-//     ],
-//     totalPeople: 40,
-//   },
-// ];
+import errorHandler from "../../utils/errorHandler"
 
 const Rooms = () => {
   const [showModal, setShowModal] = useState(false);
-  const [rooms,setRooms] = useState([]);
+  const [rooms,setRooms] = useState([])
   const openModal = ()=> {
     setShowModal(true);
   }
+  useEffect(()=> {
+    async function fetch(){
+      await errorHandler(async ()=> {
+        const {data} = await getAllRooms()
+        setRooms(data?.rooms)
+      },`frontend\src\pages\Rooms\Rooms.jsx`)
+    }
+    fetch()
+  },[])
+  console.log(rooms)
   return (
     <>
-      <div className="mt-4">
+      <div className="mt-4 px-16">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <span className="text-[20px] font-semibold heading">
@@ -93,9 +50,8 @@ const Rooms = () => {
           </div>
         </div>
         <div className="grid grid-cols-4 gap-[20px] mt-[30px]">
-          {rooms && rooms?.map((room) => {
-            console.log(room)
-            return <RoomCard room={room} key={room._id} />;
+          {rooms?.map(room=> {
+            return <RoomCard key={room?._id} room={room} />
           })}
         </div>
       </div>

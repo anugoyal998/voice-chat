@@ -1,47 +1,15 @@
-const mongoose = require('mongoose')
 const roomService = require("../services/room-service");
-const RoomDto = require("../dtos/room-dto");
-const Room = mongoose.model('Room');
-const User = require("../models/user-model");
-const userService = require('../services/user-service');
+const Room = require('../models/room-model')
+
 
 class RoomsController {
   async create(req, res) {
     try {
-      const { roomID, roomName } = req.body;
-      const user = await userService.findUser({_id: req.user._id})
-      console.log(user)
-      const room = await Room.findOneAndUpdate(
-        { roomID },
-        {
-          $set: {
-            roomName: roomName || "Unknown Room",
-            MeetingUsers: [],
-            screenShareInRoom: {
-              id: null,
-              name: null,
-            },
-            chats: [],
-          },
-          $push: {
-            roomPresentUsers: {
-              userId: req.user._id,
-              name: req.user.name,
-              socketId: req.body.socketId,
-            },
-          },
-        },
-        {
-          upsert: true,
-          new: true,
-        }
-      );
-      await User.findByIdAndUpdate(req.user._id,{
-          $push:{
-              rooms: roomID
-          }
-      })
-      res.status(200).json({room})
+      const { roomName, roomType } = req.body;
+      const arr = [req.user]
+      const data = new Room({roomID: Date.now().toString(), roomName,roomType, admin: req.user, partcipants: arr})
+      await data.save()
+      res.status(200).json(data)
     } catch (error) {
       console.log(error);
       return res.status(400).json({ msg: "error" });
@@ -61,6 +29,10 @@ class RoomsController {
     const room = await roomService.getRoom(req.params.roomId);
 
     return res.json(room);
+  }
+  async getAllRooms(req, res) {
+    const findData = await Room.find({roomType: 'open'})
+    return res.status(200).json({rooms: findData})
   }
 }
 

@@ -15,8 +15,8 @@ router.post('/api/saveUser',use(authController.saveUser))
 router.post('/api/activate',authMiddleware,activateController.activate)
 router.post('/api/refresh',authController.refresh)
 router.post('/api/logout',authMiddleware,authController.logout)
-router.post('/api/rooms',authMiddleware,roomsController.create)
-router.get('/api/rooms',authMiddleware,roomsController.index)
+router.post('/api/createRoom',authMiddleware,roomsController.create)
+router.post('/api/getAllRooms',authMiddleware,use(roomsController.getAllRooms))
 router.get('/api/rooms/:roomId', authMiddleware, roomsController.show);
 
 
