@@ -63,18 +63,6 @@ import { getAllRooms } from "../../http";
 const Rooms = () => {
   const [showModal, setShowModal] = useState(false);
   const [rooms,setRooms] = useState([]);
-  useEffect(() => {
-    async function fetch(){
-      try {
-        const {data} = await getAllRooms()
-        console.log(data)
-        setRooms(data.allRooms)
-      } catch (error) {
-        console.log(error);
-      }
-    }
-    fetch()
-  },[])
   const openModal = ()=> {
     setShowModal(true);
   }
@@ -106,7 +94,8 @@ const Rooms = () => {
         </div>
         <div className="grid grid-cols-4 gap-[20px] mt-[30px]">
           {rooms && rooms?.map((room) => {
-            return <RoomCard room={room} key={room?.id} />;
+            console.log(room)
+            return <RoomCard room={room} key={room._id} />;
           })}
         </div>
       </div>

@@ -2,7 +2,7 @@ const tokenService = require("../services/token-service")
 
 module.exports = async (req, res, next) => {
     try {
-        const {accessToken} = req.cookies
+        const {at: accessToken} = req.body
         if(!accessToken){
             throw new Error()
         }

@@ -1,5 +1,4 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { logout } from "../../http";
 import { useDispatch, useSelector } from "react-redux";
 import { setAuth } from "../../store/authSlice";
@@ -10,8 +9,11 @@ const Navigation = () => {
   const { isAuth, user } = useSelector((state) => state.auth);
   const logoutUser = async () => {
     try {
-      const { data } = await logout();
+      const {data} = await logout(); 
       dispatch(setAuth(data));
+      localStorage.removeItem('at')
+      localStorage.removeItem('rt')
+      window.location.reload()
     } catch (error) {
       console.log(error);
     }

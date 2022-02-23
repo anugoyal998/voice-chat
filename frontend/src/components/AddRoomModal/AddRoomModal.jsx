@@ -16,8 +16,9 @@ const AddRoomModal = ({ onClose }) => {
           return
       }
       try {
-          const {data} = await create({topic, roomType});
-          navigate(`/room/${data.id}`)
+          const {data} = await create({roomName: topic, roomID: Date.now().toString()});
+          console.log(data)
+          // navigate(`/room/${data.id}`)
       } catch (error) {
           console.log(error)
       }

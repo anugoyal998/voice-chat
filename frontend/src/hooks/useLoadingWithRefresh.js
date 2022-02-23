@@ -1,18 +1,20 @@
-import axios from "axios";
 import { useEffect } from "react";
 import { useState } from "react";
 import { useDispatch } from 'react-redux'
+import { refreshToken } from "../http";
 import { setAuth } from "../store/authSlice";
+import Cookies from 'js-cookie'
 
 export const useLoadingWithRefresh = ()=> {
     const [loading, setLoading] = useState(true);
     const dispatch = useDispatch()
-    const url = process.env.REACT_APP_API_URL || "http://localhost:5000";
     useEffect(()=> {
         (async ()=> {
             try {
-                const {data} = await axios.get(`${url}/api/refresh`,{withCredentials: true})
+                const {data} = await refreshToken();
                 dispatch(setAuth(data))
+                Cookies.set('at',data?.tokens?.at,{expires: 1})
+                Cookies.set('rt',data?.tokens?.rt,{expires: 7})
                 setLoading(false)
             } catch (error) {
                 console.log(error);

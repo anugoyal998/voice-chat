@@ -10,14 +10,14 @@ const RoomCard = ({ room }) => {
       <h3 className="text-lg truncate font-medium">{room.topic}</h3>
       <div className={`flex items-center relative my-[20px]`}>
         <div className="avatars">
-          {room.speakers.map((speaker) => {
+          {room.roomPresentUsers?.map((speaker) => {
             return (
               <img
                 key={speaker.id}
                 src={speaker.avatar}
                 alt="avatar"
                 className={`w-[40px] h-[40px] rounded-full object-fit border-2 border-success ${
-                  room.speakers.length === 1 ? "initial" : "absolute"
+                  room.roomPresentUsers.length === 1 ? "initial" : "absolute"
                 } ${
                   speaker.id === 1 ? "top-0 left-0" : "top-[15px] left-[15px]"
                 } bg-bgSecondary`}
@@ -26,7 +26,7 @@ const RoomCard = ({ room }) => {
           })}
         </div>
         <div className="ml-[100px]">
-          {room.speakers.map((speaker) => {
+          {room.roomPresentUsers.map((speaker) => {
             return (
               <div className="flex space-x-1 items-center" key={speaker.id}>
                 <span claasName="capitalize pb-[5px]">{speaker.name}</span>
