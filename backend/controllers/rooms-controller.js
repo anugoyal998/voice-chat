@@ -34,6 +34,14 @@ class RoomsController {
     const findData = await Room.find({roomType: 'open'})
     return res.status(200).json({rooms: findData})
   }
+  async getRoom(req, res) {
+    const {roomID} = req.body
+    if(!roomID){
+      return res.status(400).json({ msg: "error" });
+    }
+    const findData = await Room.find({roomID})
+    return res.status(200)
+  }
 }
 
 module.exports = new RoomsController();

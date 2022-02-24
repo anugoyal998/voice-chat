@@ -90,8 +90,7 @@ class AuthController {
         refreshTokenFromCookie
       );
       const token = await tokenService.findRefreshToken(
-        userData._id,
-        refreshTokenFromCookie
+        userData._id, refreshTokenFromCookie
       );
       if (!token) {
         return res.status(400).json({ msg: "error" });
@@ -124,3 +123,5 @@ class AuthController {
 }
 
 module.exports = new AuthController();
+
+// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjE3NDExZjI3ZTI2ZjlkZGQwMmU4ZjMiLCJuYW1lIjoiQW51YmhhdiBnb3lhbCIsImVtYWlsIjoiYW51Z295YWw5OThAZ21haWwuY29tIiwiYXZhdGFyIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUFUWEFKd3d1RklRSHdKbGhqZTFnWXRDcXI4TWtJVDJXOWhxQ18xVWJVNFNLUT1zOTYtYyIsImlhdCI6MTY0NTY5MTE3NSwiZXhwIjoxNjQ2Mjk1OTc1fQ.m8kzvRMQytGbHMG2LJao0UJT1eGHaPTguIQcoZE0wmE
