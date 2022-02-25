@@ -11,97 +11,13 @@ import Peer from "simple-peer";
 const Room = () => {
   const [searchParams] = useSearchParams();
   const roomID = searchParams.get("roomID").toString();
-  const [room, setRoom] = useState();
   const { user } = useSelector((state) => state.auth);
-  const socket = useRef();
-  const [userStream, setUserStream] = useState(null);
-  const [allUsers, setAllUsers] = useState([]);
-  const [newUserJoinedFlag, setNewUserJoinedFlag] = useState(false);
-  // user permissions
-  useEffect(() => {
-    socket.current = io(process.env.REACT_APP_API_URL);
-    async function fetch() {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      setUserStream(stream);
-    }
-    fetch();
-  }, []);
-
-  // set user permissions
-  useEffect(() => {
-    if (!room) return;
-    const ele = document.getElementById("userMedia");
-    ele.srcObject = userStream;
-    ele.volume = 0;
-  }, [room]);
-
-  // emit join room event
-  useEffect(() => {
-    socket.current.emit("join room", { roomID, user });
-  }, [room, user, socket]);
-  // create peer
-  const createPeer = (userToSignal, callerID, stream, data) => {
-    const peer = new Peer({
-      initiator: true,
-      trickle: false,
-      stream,
-    });
-    peer.on("signal", (signal) => {
-      socket.current.emit("sending signal", {
-        userToSignal,
-        callerID,
-        signal,
-        data,
-      });
-    });
-    return peer;
-  };
-  // add Peer
-  const addPeer = (incomingSignal, callerID, stream, data) => {
-    const peer = new Peer({
-      initiator: false,
-      trickle: false,
-      stream,
-    });
-    peer.on("signal", (signal) => {
-      socket.current.emit("returning signal", { signal, callerID, data });
-    });
-    peer.signal(incomingSignal);
-    return peer;
-  };
-  // get all users
-  useEffect(() => {
-    socket.current.on("all users", (data) => {
-      // setAllUsers(data)
-      const peers = [];
-      data?.forEach((e) => {
-        const peer = createPeer(e?.socketID, socket.current.id, userStream, e);
-        peers.push({ peer, data: e, peerID: e?.socketID });
-      });
-      setAllUsers(peers);
-    });
-  }, []);
-  // user joined
-  useEffect(() => {
-    socket.current.on("user joined", (payload) => {
-      const peer = addPeer(
-        payload?.signal,
-        payload?.callerID,
-        userStream,
-        payload?.data
-      );
-    //   setAllUsers(prev=> [...prev,{peer,data: payload?.data, peerID: payload?.callerID}])
-      setNewUserJoinedFlag((prev) => !prev);
-    });
-    socket.current.on("receiving returned signal", (payload) => {
-      const item = allUsers?.find((p) => p.peerID === payload?.id);
-      item?.peer.signal(payload?.signal);
-    });
-  }, []);
-  // get room
+  const [room,setRoom] = useState()
+  const socket = useRef()
+  const userMedia = useRef()
+  const peersRef = useRef([])
+  const [peers,setPeers] = useState([])
+  // get Room
   useEffect(() => {
     async function fetch() {
       await errorHandler(async () => {
@@ -110,7 +26,96 @@ const Room = () => {
       }, `frontend\src\pages\Room\Room.jsx`);
     }
     fetch();
-  }, [roomID, newUserJoinedFlag]);
+  }, [roomID]);
+
+  // peer
+  const createPeer = (userToSignal, callerID, stream, user)=> {
+	  const peer = new Peer({
+		initiator: true,
+		trickle: false,
+		stream,
+	  })
+	  peer.on('signal',signal => {
+		//   console.log(signal,"signal")
+		socket.current.emit('sending signal',{userToSignal, callerID, signal,user})
+	  })
+	  return peer
+  }
+
+  const addPeer = (incomingSignal, callerID, stream, user) => {
+	  const peer = new Peer({
+		initiator: false,
+		trickle: false,
+		stream,
+	})
+
+	peer.on('signal',signal => {
+		socket.current.emit('returning signal',{signal,callerID,user})
+	})
+
+	peer.signal(incomingSignal)
+
+	return peer
+  }
+  // peer
+  // rtc
+  useEffect(() => {
+	  if(!roomID || !room)return
+    socket.current = io(process.env.REACT_APP_API_URL)
+    navigator.mediaDevices.getUserMedia({video: false, audio: true}).then(stream=> {
+		if(userMedia.current){
+			userMedia.current.srcObject = stream
+			userMedia.current.volume = 0
+		}
+		socket.current.emit("join room",roomID,user)
+		socket.current.on("all users", payload=> {
+			// console.log(payload,"payload")
+			let arr = []
+			peersRef.current = []
+			payload.forEach(ele=> {
+				const peer = createPeer(ele.socketID,socket.current.id,stream,ele.user) 
+				// other user socket id, current user socket id, current user stream
+				peersRef.current.push({
+					peerID: ele.socketID,
+					peer,
+					user: ele.user
+				})
+				arr.push({peerID: ele.socketID, peer, user: ele.user})
+			})
+			setPeers(arr)
+		})
+
+		socket.current.on("user joined", payload=> {
+			const peer = addPeer(payload.signal,payload.callerID,stream,payload.user)
+			peersRef.current.push({
+				peerID: payload.callerID,
+				peer,
+				user: payload.user
+			})
+
+			setPeers(prev=> [...prev, {peerID: payload.callerID, peer, user: payload.user}])
+		})
+
+		socket.current.on('receiving returned signal',payload=> {
+			const item = peersRef.current.find(p=> p.peerID === payload.id)
+			item?.peer.signal(payload.signal)
+		})
+
+    })
+
+	return ()=> {
+		socket.current.emit('user left',{user,roomID})
+	}
+
+  },[roomID,room])
+  // browser leave
+  window.addEventListener("beforeunload",e=> {
+	  e.preventDefault()
+	  socket.current.emit('user left',{user,roomID})
+  })
+
+  // rtc
+  // user joined
   if (!roomID || !room) {
     return <Loader message="Loading...please wait..." />;
   }
@@ -127,58 +132,32 @@ const Room = () => {
         <p className="capitalize text-xl font-semibold tracking-widest">
           {room?.roomName}
         </p>
-        <audio id="userMedia" autoPlay playsInline controls />
+		<audio ref={userMedia} autoPlay controls playsInline />
+
 		{
-			allUsers?.map((curr,index)=> {
-				return <Audio key={index} peer={curr?.peer} id={index} />
+			peers?.map((e,index)=> {
+				return <Audio key={index} data={e} />
 			})
 		}
+
+
       </div>
     </>
   );
 };
 
-const Audio = ({peer,id}) => {
-	// const [stream,setStream] = useState(null)
-	// const [flag,setFlag] = useState(false)
-
-	// const ref = useRef(null)
-	// useEffect(() => {
-	// 	setStream(prev=> peer.streams[0])
-	// },[peer])
-
-	// useEffect(() => {
-	// 	if(!stream)return
-	// 	setFlag(prev=> true)
-	// 	const ele = document.getElementById(id)
-	// 	ele.srcObject = stream
-	// },[stream])
-
-	// useEffect(() => {
-	// 	if(flag === false)return
-	// 	const ele = document.getElementById(id)
-	// 	ele.srcObject = stream
-	// },[flag,stream,peer,peer.streams])
-
-	const ele = document.getElementById(id)
-
-	useEffect(() => {
-		peer.on('stream',stream => {
-			console.log(stream)
-		})
-	})
-
-
-
-
-
-
-
+const Audio = ({data})=> {
+	const {peer,peerID,user} = data
+	const ref = useRef()
+	useEffect(()=> {
+		if(ref.current){
+			ref.current.srcObject = peer.streams[0]
+		}
+	},[])
 	return(
-		<audio id={id} playsInline autoPlay controls />
+		<audio ref={ref} autoPlay controls playsInline />
 	)
+}
 
-
-};
 
 export default Room;

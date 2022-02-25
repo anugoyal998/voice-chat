@@ -13,7 +13,7 @@ class RoomsController {
         partcipants: [],
       });
       await data.save();
-      res.status(200).json(data);
+      res.status(200).json({ room: data });
     } catch (error) {
       console.log(error);
       return res.status(400).json({ msg: "error" });
@@ -53,9 +53,15 @@ class RoomsController {
   async addUserToRoom(roomID, user, socketID) {
     let room = await Room.findOne({ roomID });
     let arr = room?.partcipants;
+    if (!arr) arr = [];
     const found = arr?.find((element) => element?.user?._id === user?._id);
     if (!found) {
       arr.push({ user, socketID });
+    } else {
+      let curr = found;
+      curr.socketID = socketID;
+      arr = arr?.filter((element) => element.user._id !== user._id);
+      arr.push(curr);
     }
     await Room.updateOne({ _id: room?._id }, { $set: { partcipants: arr } });
   }
@@ -63,6 +69,13 @@ class RoomsController {
   async getPartcipants(roomID) {
     let room = await Room.findOne({ roomID });
     return room?.partcipants;
+  }
+
+  async removeUserFromRoom(user, roomID) {
+    let room = await Room.findOne({ roomID });
+    let arr = room?.partcipants;
+    arr = arr.filter((e) => e.user._id !== user._id);
+    await Room.updateOne({ _id: room._id }, { $set: { partcipants: arr } });
   }
 }
 
