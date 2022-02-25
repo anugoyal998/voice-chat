@@ -34,21 +34,26 @@ const roomController = require("./controllers/rooms-controller")
 
 
 io.on("connection", (socket) => {
-	socket.on("join room",async data=> {
-		socket.join(data?.roomID)
-		await roomController.addUserToRoom(data?.roomID,data?.user,socket?.id)
-		const partcipants = await roomController.getPartcipants(data?.roomID)
-		const filterData = partcipants?.filter(e=> e?.user?._id !== data?.user?._id)
-		io.to(data?.roomID).emit("all users",filterData)
+	const socketID = socket.id
+	socket.on("join room",async (roomID,user)=> {
+		await roomController.addUserToRoom(roomID,user,socketID)
+		const part = await roomController.getPartcipants(roomID)
+		const filterData = part?.filter(e=> e.user._id !== user._id)
+		socket.emit("all users",filterData)
+	})  
+
+	socket.on('sending signal',({userToSignal, callerID, signal,user})=> {
+		io.to(userToSignal).emit('user joined',{signal,callerID,user})
 	})
 
-	socket.on("sending signal",payload=> {
-		io.to(payload?.userToSignal).emit("user joined",{signal: payload?.signal, callerID: payload?.callerID, data: payload?.data})
+	socket.on('returning signal',({signal,callerID,user})=> {
+		io.to(callerID).emit('receiving returned signal',{signal,id: socketID, user})
 	})
 
-	socket.on("returning signal",payload=> {
-		io.to(payload?.callerID).emit('receiving returned signal',{signal: payload?.signal, id: socket?.id, data: payload?.data})
+	socket.on('user left',async ({user,roomID})=> {
+		await roomController.removeUserFromRoom(user,roomID)
 	})
+	
 });
 
 server.listen(PORT, () => {
