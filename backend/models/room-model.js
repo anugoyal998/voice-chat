@@ -1,12 +1,21 @@
 const mongoose = require("mongoose");
 
+const Schema = mongoose.Schema
+
 const roomSchema = new mongoose.Schema(
   {
-    roomName: { type: String, required: true },
-    roomID: { type: String, required: true },
-    roomType: { type: String, required: true },
-    admin: { type: Object, required: true },
-    partcipants: { type: Array, required: false},
+    topic: { type: String, required: true},
+    ownerId: { type: Schema.Types.ObjectId, required: true},
+    roomType: { type: String, ref: 'User'},
+    speakers: {
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: 'User'
+        }
+      ],
+      required: false
+    }
   },
   { timestamps: true }
 );

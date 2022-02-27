@@ -39,7 +39,7 @@ const App = () => {
               }
             />
             <Route
-              path="/room"
+              path="/room/:id"
               element={
                 !isAuth ? (
                   <Navigate to="/" />

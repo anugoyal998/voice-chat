@@ -9,20 +9,22 @@ import errorHandler from "../../utils/errorHandler"
 
 const Rooms = () => {
   const [showModal, setShowModal] = useState(false);
-  const [rooms,setRooms] = useState([])
+  const [rooms,setRooms] = useState([]);
   const openModal = ()=> {
     setShowModal(true);
   }
   useEffect(()=> {
     async function fetch(){
-      await errorHandler(async ()=> {
+      try {
         const {data} = await getAllRooms()
-        setRooms(data?.rooms)
-      },`frontend\src\pages\Rooms\Rooms.jsx`)
+        setRooms(data)
+        console.log(data)
+      } catch (error) {
+        console.log(error);
+      }
     }
     fetch()
   },[])
-  console.log(rooms)
   return (
     <>
       <div className="mt-4 px-16">
@@ -48,11 +50,6 @@ const Rooms = () => {
               <span className="font-semibold text-[1rem]">Start a room</span>
             </button>
           </div>
-        </div>
-        <div className="grid grid-cols-4 gap-[20px] mt-[30px]">
-          {rooms?.map(room=> {
-            return <RoomCard key={room?._id} room={room} />
-          })}
         </div>
       </div>
       {showModal && <AddRoomModal onClose={()=> setShowModal(false)}  />}

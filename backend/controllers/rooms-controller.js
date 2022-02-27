@@ -1,19 +1,16 @@
 const roomService = require("../services/room-service");
 const Room = require("../models/room-model");
+const RoomDto = require("../dtos/room-dto");
 
 class RoomsController {
   async create(req, res) {
     try {
-      const { roomName, roomType } = req.body;
-      const data = new Room({
-        roomID: Date.now().toString(),
-        roomName,
-        roomType,
-        admin: req.user,
-        partcipants: [],
-      });
-      await data.save();
-      res.status(200).json({ room: data });
+      const {topic,roomType} = req.body
+      if(!topic || !roomType){
+        return res.status(400).json({ msg: "error" });
+      }
+      const room  = await roomService.create({topic,roomType,ownerId: req.user._id})
+      return res.status(200).json(new RoomDto(room))
     } catch (error) {
       console.log(error);
       return res.status(400).json({ msg: "error" });
@@ -21,9 +18,9 @@ class RoomsController {
   }
   async index(req, res) {
     try {
-      const rooms = await Room.find({});
-      //   const allRooms = rooms.map((room) => new RoomDto(room));
-      return res.status(200).json({ allRooms: rooms });
+      const rooms = await roomService.getAllRooms(['open'])
+      const allRooms = rooms?.map(room=> new RoomDto(room))
+      return res.status(200).json(allRooms)
     } catch (error) {
       console.log(error);
       return res.status(400).json({ msg: "error" });
