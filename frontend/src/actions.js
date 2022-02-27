@@ -1,4 +1,4 @@
-export const ACTIONS = {
+const ACTIONS = {
     JOIN: 'join',
     LEAVE: 'leave',
     ADD_PEER: 'add-peer',
@@ -8,3 +8,5 @@ export const ACTIONS = {
     SESSION_DESCRIPTION: 'session-description',
     REMOVE_PEER: 'remove-peer',
 }
+
+export default ACTIONS

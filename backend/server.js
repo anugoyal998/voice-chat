@@ -8,6 +8,7 @@ const dbConnect = require("./database");
 const cookieParser = require("cookie-parser");
 const server = require("http").createServer(app);
 const socket = require("socket.io");
+const ACTIONS = require("./actions")
 const io = socket(server, {
   cors: {
     origin: process.env.FRONTEDN_URL,
@@ -29,32 +30,26 @@ app.get("/", (req, res) => {
   res.send("<h1>Hello World!</h1>");
 });
 
+// sockets
 
-const roomController = require("./controllers/rooms-controller")
+const  socketUserMapping = {}
 
+io.on('connection',(socket)=> {
 
-io.on("connection", (socket) => {
-	const socketID = socket.id
-	socket.on("join room",async (roomID,user)=> {
-		await roomController.addUserToRoom(roomID,user,socketID)
-		const part = await roomController.getPartcipants(roomID)
-		const filterData = part?.filter(e=> e.user._id !== user._id)
-		socket.emit("all users",filterData)
-	})  
+	socket.on(ACTIONS.JOIN,({roomId, user})=> {
+		socketUserMapping[socket.id] = user
+		const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || [])
+		clients.forEach(clientId => {
+			io.to(clientId).emit(ACTIONS.ADD_PEER,{})
+		})
 
-	socket.on('sending signal',({userToSignal, callerID, signal,user})=> {
-		io.to(userToSignal).emit('user joined',{signal,callerID,user})
+		socket.emit(ACTIONS.ADD_PEER,{})
+
+		socket.join(roomId)
 	})
 
-	socket.on('returning signal',({signal,callerID,user})=> {
-		io.to(callerID).emit('receiving returned signal',{signal,id: socketID, user})
-	})
-
-	socket.on('user left',async ({user,roomID})=> {
-		await roomController.removeUserFromRoom(user,roomID)
-	})
 	
-});
+})
 
 server.listen(PORT, () => {
   console.log("listening on port 5000");
