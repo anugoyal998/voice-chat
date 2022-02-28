@@ -8,6 +8,8 @@ const Room = () => {
   const  user = useSelector(state=> state.auth.user)
   const {clients, provideRef} = useWebRTC(roomId,user)
 
+  console.log(clients)
+
   return (
     <div>
       <h1>All Connected clients</h1>

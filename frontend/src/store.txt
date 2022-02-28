@@ -1,0 +1,327 @@
+// use web rtc
+
+import { useCallback, useEffect } from "react";
+import { useRef } from "react";
+import { useStateWithCallback } from "./useStateWithCallback";
+import socketInit from '../socket/index'
+import ACTIONS from '../actions'
+import freeice from 'freeice'
+
+const users = [
+    {
+      id: 1,
+      name: "Rakesh K",
+    },
+    {
+      id: 2,
+      name: "John Doe",
+    },
+]
+
+export const useWebRTC = (roomId, user)=> {
+    const [clients, setClients] = useStateWithCallback([]);
+    const audioElements = useRef({})
+    const connections = useRef({})
+    const localMediaStream = useRef(null)
+    const socket = useRef(null)
+
+    useEffect(()=> {
+        socket.current = socketInit()
+    },[])
+
+    const  addNewClient = useCallback((newClient, cb)=> {
+        const lookingFor = clients?.find((client)=> client.id === newClient.id)
+        if(lookingFor === undefined) {
+            setClients((existingClients)=> [...existingClients, newClient], cb)
+        }
+    },[clients, setClients])
+
+    // capture media
+
+    useEffect(()=> {
+        const startCapture = async () => {
+            localMediaStream.current = await navigator.mediaDevices.getUserMedia({audio: true})
+        }
+        startCapture().then(()=> {
+            addNewClient(user,()=> {
+                const localElement = audioElements.current[user.id]
+                if(localElement){
+                    localElement.volume = 0
+                    localElement.srcObject = localMediaStream.current
+                }
+
+                // socket emit JOIN
+
+                socket.current.emit(ACTIONS.JOIN,{roomId, user})
+            })
+        })
+
+        return ()=> {
+            // leaving room
+            localMediaStream.current.getTracks().forEach(track => track.stop())
+
+            socket.current.emit(ACTIONS.LEAVE, {roomId})
+        }
+    },[])
+
+    useEffect(()=> {
+
+        const handleNewPeer = async ({peerId, createOffer, user: remoteUser})=> {
+            // if already connected then give warning
+            if(peerId in connections.current){
+                // connections: {
+                //      socketId: connection
+                // }
+                return console.warn(
+                    `You are already connected with ${peerId} ${user.name}`
+                )
+            }
+
+            connections.current[peerId] = new RTCPeerConnection({
+                iceServers: freeice()
+            })
+
+            // handle new ice candidate
+            connections.current[peerId].onicecandidate = (event)=> {
+                socket.current.emit(ACTIONS.RELAY_ICE,{
+                    peerId,
+                    icecandidate: event.candidate
+                })
+            }
+
+            // handle on track on this connection
+
+            connections.current[peerId].ontrack = ({
+                streams: [remoteStream]
+            }) => {
+                addNewClient(remoteUser, ()=> {
+                    if(audioElements.current[remoteUser.id]){
+                        audioElements.current[remoteUser.id].srcObject = remoteStream
+                    }else{
+                        let settled = false
+                        const interval = setInterval(()=> {
+                            if(audioElements.current[remoteUser.id]){
+                                audioElements.current[remoteUser.id].srcObject = remoteStream
+                                settled = true
+                            }       
+                            if(settled){
+                                clearInterval(interval)
+                            }
+                        },1000)
+                    }
+                })
+            }
+
+            // add local track to remote connections
+            localMediaStream.current.getTracks().forEach(track => {
+                connections.current[peerId].addTrack(
+                    track, 
+                    localMediaStream.current
+                )
+            })
+
+            //  create offer
+
+            if(createOffer){
+                const offer = await connections.current[peerId].createOffer()
+
+                await connections.current[peerId].setLocalDescription(offer)
+                // send offer to another client
+                socket.current.emit(ACTIONS.RELAY_SDP,{
+                    peerId,
+                    sessionDescription: offer
+                })
+            }
+
+        }
+
+        socket.current.on(ACTIONS.ADD_PEER,handleNewPeer)
+
+        return ()=> {
+            socket.current.off(ACTIONS.ADD_PEER)
+        }
+    },[])
+
+    // handle ice candidate
+    useEffect(()=> {
+        socket.current.on(ACTIONS.ICE_CANDIDATE,async ({peerId, icecandidate})=> {
+            if(icecandidate){
+                await connections.current[peerId].addIceCandidate(icecandidate)
+            }
+        })
+
+        return ()=> {
+            socket.current.off(ACTIONS.ICE_CANDIDATE)
+        }
+    },[])
+
+    // handle sdp
+    useEffect(()=> {
+
+        const handleRemoteSdp = async ({
+            peerId, 
+            sessionDescription: remoteSessionDescription
+        })=> {
+            connections.current[peerId].setRemoteSessionDescription(
+                new RTCPeerConnection(remoteSessionDescription)
+            )
+
+            // if session description is type of offer create an answer
+
+            if(remoteSessionDescription.type === 'offer'){
+                const connection = connections.current[peerId]
+                const answer = await connection.createAnswer()
+
+                connection.setLocalDescription(answer)
+
+                socket.current.emit(ACTIONS.RELAY_SDP,{
+                    peerId,
+                    sessionDescription: answer
+                })
+            }
+        }
+        socket.current.on(ACTIONS.SESSION_DESCRIPTION,handleRemoteSdp)
+
+        return ()=> {
+            socket.current.off(ACTIONS.SESSION_DESCRIPTION)
+        }
+    },[])
+
+
+    // handle remove peer
+
+    useEffect(()=> {
+        const handleRemovePeer = async ({peerId, userId})=> {
+            if(connections.current[peerId]){
+                connections.current[peerId].close()
+            }
+
+            delete connections.current[peerId]
+            delete audioElements.current[peerId]
+            setClients((list) => list.filter(client=> client.id !== userId))
+        }
+        socket.current.on(ACTIONS.REMOVE_PEER, handleRemovePeer)
+
+        return ()=> {
+            socket.current.off(ACTIONS.REMOVE_PEER)
+        }
+    },[])
+
+    const provideRef = (instance, userId)=> {
+        audioElements.current[userId] = instance
+    }
+
+    return {clients, provideRef}
+}
+
+
+// server
+
+require("dotenv").config();
+const express = require("express");
+const app = express();
+const PORT = process.env.PORT || 5000;
+const Router = require("./routes");
+const cors = require("cors");
+const dbConnect = require("./database");
+const cookieParser = require("cookie-parser");
+const server = require("http").createServer(app);
+const socket = require("socket.io");
+const ACTIONS = require("./actions")
+const io = socket(server, {
+  cors: {
+    origin: process.env.FRONTEDN_URL,
+    methods: ["GET", "POST"],
+  },
+});
+dbConnect();
+
+app.use(express.json({ limit: "8mb" }));
+app.use(cookieParser());
+app.use(cors({ origin: [process.env.FRONTEDN_URL], credentials: true }));
+app.use("/", Router);
+app.use("/storage", express.static("storage"));
+app.use((err, req, res, next) => {
+  console.log(err);
+  res.status(500).send({ msg: "someting went wrong" });
+});
+app.get("/", (req, res) => {
+  res.send("<h1>Hello World!</h1>");
+});
+
+// sockets
+
+const  socketUserMapping = {}
+
+io.on('connection',(socket)=> {
+
+	socket.on(ACTIONS.JOIN,({roomId, user})=> {
+		socketUserMapping[socket.id] = user
+		const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || [])
+		clients.forEach(clientId => {
+			io.to(clientId).emit(ACTIONS.ADD_PEER,{
+				peerId: socket.id,
+				createOffer: false,
+				user
+			})
+			socket.emit(ACTIONS.ADD_PEER,{
+				peerId: clientId,
+				createOffer: true,
+				user: socketUserMapping[clientId]
+			})
+		})
+
+
+		socket.join(roomId)
+	})
+
+	// handle relay ice
+	socket.on(ACTIONS.RELAY_ICE,({peerId, icecandidate}) => {
+		io.to(peerId).emit(ACTIONS.ICE_CANDIDATE,{
+			peerId: socket.id,
+			icecandidate
+		})
+	})
+
+	// handle relay sdp (session description)
+	socket.on(ACTIONS.RELAY_SDP,({peerId, sessionDescription}) => {
+		io.io(peerId).emit(ACTIONS.SESSION_DESCRIPTION,{
+			peerId: socket.id,
+			sessionDescription,
+		})
+	})
+
+	// leaving room
+	const leaveRoom = ({roomId})=> {
+		const {rooms} = socket
+
+		Array.from(rooms).forEach(roomId=> {
+			const clients = Array.from(
+				io.sockets.adapter.rooms.get(roomId) || []
+			)
+
+			clients.forEach(clientId=> {
+				io.to(clientId).emit(ACTIONS.REMOVE_PEER,{
+					peerId: socket.id,
+					userId: socketUserMapping[socket.id]?.id,
+				})
+
+
+				socket.emit(ACTIONS.REMOVE_PEER,{
+					peerId: clientId,
+					userId: socketUserMapping[clientId]?.id
+				})
+			}) 
+			socket.leave(roomId)
+		})
+
+		delete socketUserMapping[socket.id]
+	}
+	socket.on(ACTIONS.LEAVE,leaveRoom)
+
+	
+})
+
+server.listen(PORT, () => {
+  console.log("listening on port 5000");
+});
